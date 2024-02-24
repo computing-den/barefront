@@ -1,0 +1,25 @@
+{
+  "name": "barefront",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "bin": {
+    "barefront": "./dist/barefront.js"
+  },
+  "main": "./dist/barefront.js",
+  "scripts": {
+    "clean": "rm -rf ./dist tsconfig.tsbuildinfo",
+    "build": "tsc --build",
+    "chmod": "chmod +x ./dist/barefront.js",
+    "dev": "tsc --build --watch --preserveWatchOutput"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "esbuild": "^0.20.1",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.20"
+  }
+}
