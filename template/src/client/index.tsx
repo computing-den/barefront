@@ -5,7 +5,7 @@ function setup() {
   const root = createRoot(document.getElementById('app')!);
   root.render(
     <>
-      <img src="/public/barefront.svg" />
+      <img src="/barefront.svg" />
       <h1>Hello Barefront!</h1>
     </>,
   );

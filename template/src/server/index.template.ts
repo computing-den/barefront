@@ -1,15 +1,17 @@
+import 'dotenv/config';
+
 import express from 'express';
 import path from 'path';
 import { adder } from '../common/adder.js';
 
 const PUBLIC = path.join(process.cwd(), 'public');
-const DIST = path.join(process.cwd(), 'dist/bundles');
+const DIST_PUBLIC = path.join(process.cwd(), 'dist/public');
 
 const app = express();
 app.use(express.json());
 
-app.use('/public', express.static(PUBLIC));
-app.use('/dist', express.static(DIST));
+app.use('/', express.static(PUBLIC));
+app.use('/', express.static(DIST_PUBLIC));
 
 app.get('/adder', (req, res) => {
   res.send(`2 + 2 = ${adder(2, 2)}`);
@@ -22,9 +24,9 @@ app.get('/', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Template</title>
-    <link rel="stylesheet" href="/dist/style.css">
-	  <script src="/dist/index.js"></script>
+    <title>%{name}</title>
+    <link rel="stylesheet" href="/style.css">
+	  <script src="/index.js"></script>
   </head>
   <body>
     <div id="app"></div>
@@ -32,6 +34,15 @@ app.get('/', (req, res) => {
 </html>`);
 });
 
-app.listen(3000, () => {
-  console.log(`Listening on port 3000`);
+app.use((req, res, next) => {
+  res.status(404).send('Page not found.');
+});
+
+app.use(((error, req, res, next) => {
+  console.error(error);
+  res.status(500).send(error.message);
+}) as express.ErrorRequestHandler);
+
+app.listen(Number(process.env.PORT), () => {
+  console.log(`Listening on port ${process.env.PORT}`);
 });

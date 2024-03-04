@@ -4,7 +4,7 @@ import cp from 'node:child_process';
 
 export type TaggerOptions = { name: string; color: string };
 export type CommandOptions = cp.SpawnOptionsWithoutStdio &
-  TaggerOptions & { onExit?: (code?: number) => any; noTagger?: boolean };
+  TaggerOptions & { onExit?: (code?: number) => any; noTagger?: boolean; debug?: boolean; noThrow?: boolean };
 
 export class Command {
   proc: cp.ChildProcessWithoutNullStreams | undefined;
@@ -14,8 +14,11 @@ export class Command {
     this.tagger = new Tagger(options);
   }
 
-  async run() {
+  async run(): Promise<number | undefined> {
     return new Promise((resolve, reject) => {
+      if (this.options.debug) {
+        console.error(`${this.command} ${this.args.map(quoteAndEscapeCmdArg).join(' ')}`);
+      }
       this.proc = cp.spawn(this.command, this.args, this.options);
 
       this.proc.stdout.pipe(new LinePrefixTransform(this.tagger)).pipe(process.stdout);
@@ -23,18 +26,26 @@ export class Command {
 
       this.proc.on('close', code => {
         console.error(`${this.tagger.get()} exited with code ${code}.`);
+
         if (this.options.onExit) {
-          // console.error(`${this.tagger.get()} Killing other processes...`);
-          // killAllAndExit(code ?? undefined);
           this.options.onExit(code ?? undefined);
         }
-        if (code === 0) {
+
+        if (this.options.noThrow) {
+          resolve(code ?? undefined);
+        } else if (code === 0) {
           resolve(0);
         } else {
-          reject(new Error(`code ${code}`));
+          reject(new CommandError(`code ${code}`, code ?? undefined));
         }
       });
     });
+  }
+}
+
+class CommandError extends Error {
+  constructor(arg: any, public exitCode?: number) {
+    super(arg);
   }
 }
 
@@ -94,6 +105,11 @@ export async function waitUntilFileAccessible(filePath: string) {
   }
 }
 
+export function exitWithError(msg: string): never {
+  console.error(`ERROR: ${msg}`);
+  process.exit(-1);
+}
+
 export const COLORS: { [key: string]: string } = {
   reset: '\x1b[0m',
   bright: '\x1b[1m',
@@ -121,3 +137,11 @@ export const COLORS: { [key: string]: string } = {
   bgWhite: '\x1b[47m',
   bgGray: '\x1b[100m',
 };
+
+function quoteAndEscapeCmdArg(arg: string): string {
+  return `"${escapeCmdArg(arg)}"`;
+}
+
+function escapeCmdArg(arg: string): string {
+  return arg.replace(/\$`\\/g, x => `\\${x}`);
+}

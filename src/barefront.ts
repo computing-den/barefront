@@ -21,6 +21,7 @@ const templateDirPath = path.resolve(curFilename, '../../template');
 const argsConfig: util.ParseArgsConfig = {
   options: {
     linkToBarefront: { type: 'boolean' },
+    // deployName: { type: 'string' },
   },
   allowPositionals: true,
 };
@@ -28,7 +29,7 @@ const argsConfig: util.ParseArgsConfig = {
 const args = util.parseArgs(argsConfig);
 
 if (!args.positionals.length) {
-  exitWithError('missing command.');
+  u.exitWithError('missing command.');
 }
 
 const command = args.positionals[0];
@@ -50,16 +51,20 @@ switch (command) {
     await buildApi.clean();
     break;
   }
+  // case 'deploy': {
+  //   await buildApi.deploy(args.values as any);
+  //   break;
+  // }
   default: {
-    exitWithError(`unknown command ${command}.`);
+    u.exitWithError(`unknown command ${command}.`);
   }
 }
 
 async function create() {
   const name = args.positionals[1];
-  if (!name) exitWithError('missing project name.');
-  if (name.includes('/') || name.includes('\\')) exitWithError('project name must not include / or \\.');
-  if (await u.canAccessPath(name)) exitWithError(`${name} already exists.`);
+  if (!name) u.exitWithError('missing project name.');
+  if (name.includes('/') || name.includes('\\')) u.exitWithError('project name must not include / or \\.');
+  if (await u.canAccessPath(name)) u.exitWithError(`${name} already exists.`);
 
   await copyFiles(name);
   await expandFiles(name, { name });
@@ -75,22 +80,17 @@ async function copyFiles(dirPath: string) {
 }
 
 async function installPackages(dirPath: string) {
+  console.log(`Installing packages ...`);
+  cp.execSync('npm install', { cwd: path.resolve(dirPath), stdio: 'inherit' });
   if (args.values.linkToBarefront) {
     console.log('linking barefront ...');
     cp.execSync('npm link barefront', { cwd: path.resolve(dirPath), stdio: 'inherit' });
   }
-  console.log(`Installing packages ...`);
-  cp.execSync('npm install', { cwd: path.resolve(dirPath), stdio: 'inherit' });
 }
 
 async function initGit(dirPath: string) {
   console.log('Initializing git ...');
   cp.execSync('git init', { cwd: path.resolve(dirPath), stdio: 'inherit' });
-}
-
-function exitWithError(msg: string): never {
-  console.error(`ERROR: ${msg}`);
-  process.exit(-1);
 }
 
 async function expandFiles(dirPath: string, vars: TemplateVars) {
@@ -114,8 +114,8 @@ async function expandFile(templatePath: string, vars: TemplateVars) {
 }
 
 function expandTemplateContent(template: string, vars: TemplateVars): string {
-  return template.replace(/\\\$|\${(\w+)}/g, (match, key) => {
-    if (match === '\\$') return '$';
+  return template.replace(/\\%|\%{([a-zA-Z_][a-zA-Z0-9_]*)}/g, (match, key) => {
+    if (match === '\\%') return '%';
     if (!(key in vars)) throw new Error(`Unknown template variable "${key}"`);
     return (vars as any)[key];
   });

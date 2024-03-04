@@ -1,14 +1,14 @@
 import * as u from './util.js';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const SERVER_DIST_FILE_PATH = 'dist/server/index.js';
-const CLIENT_JS_SRC_FILE_PATH = 'src/client/index.tsx';
-const CLIENT_CSS_SRC_FILE_PATH = 'src/client/style.css';
 
 export async function runDev() {
   // NOTE npm/npx commands are run for the template project's package.
 
   // Clean prev builds.
-  await new u.Command('rm', ['-rf', './dist', 'tsconfig.tsbuildinfo'], { name: 'clean', color: 'fgYellow' }).run();
+  await clean();
 
   // Run typescript.
   const tsCmd = new u.Command('npx', ['tsc', '--build', '--watch', '--pretty', '--preserveWatchOutput'], {
@@ -19,33 +19,23 @@ export async function runDev() {
   tsCmd.run();
 
   // Run esbuild.
-  const bundleCmd = new u.Command(
-    'npx',
-    [
-      'esbuild',
-      CLIENT_JS_SRC_FILE_PATH,
-      CLIENT_CSS_SRC_FILE_PATH,
-      '--watch',
-      '--bundle',
-      '--minify',
-      '--sourcemap',
-      '--format=esm',
-      '--outdir=dist/bundles',
-    ],
-    {
-      name: 'bundle',
-      color: 'fgBlue',
-      onExit: bundleExited,
-    },
-  );
-  bundleCmd.run();
+  const esbuildCmd = new u.Command('node', ['esbuild.config.mjs', '--watch'], {
+    name: 'esbuild',
+    color: 'fgBlue',
+    onExit: esbuildExited,
+  });
+  esbuildCmd.run();
 
   // Run server.
-  const serverCmd = new u.Command('node', ['--enable-source-maps', '--watch', SERVER_DIST_FILE_PATH], {
-    name: 'server',
-    color: 'fgMagenta',
-    onExit: serverExited,
-  });
+  const serverCmd = new u.Command(
+    'node',
+    ['--enable-source-maps', '--watch', '--inspect=9230', SERVER_DIST_FILE_PATH],
+    {
+      name: 'server',
+      color: 'fgMagenta',
+      onExit: serverExited,
+    },
+  );
   console.error(serverCmd.tagger.get() + ` waiting for ${SERVER_DIST_FILE_PATH} ...`);
   await u.waitUntilFileAccessible(SERVER_DIST_FILE_PATH);
   serverCmd.run();
@@ -54,7 +44,7 @@ export async function runDev() {
   function tsExited(code?: number) {
     process.exit(code);
   }
-  function bundleExited(code?: number) {
+  function esbuildExited(code?: number) {
     process.exit(code);
   }
   async function serverExited(code?: number) {
@@ -64,16 +54,37 @@ export async function runDev() {
 }
 
 export async function build() {
-  throw new Error('TODO');
+  // NOTE npm/npx commands are run for the template project's package.
+
+  // Clean prev builds.
+  await clean();
+
+  // Run typescript.
+  const tsCmd = new u.Command('npx', ['tsc', '--build', '--pretty', '--preserveWatchOutput'], {
+    name: 'ts',
+    color: 'fgGreen',
+    onExit: tsExited,
+  });
+  tsCmd.run();
+
+  // Run esbuild.
+  const esbuildCmd = new u.Command('node', ['esbuild.config.mjs'], {
+    name: 'esbuild',
+    color: 'fgBlue',
+    onExit: esbuildExited,
+  });
+  esbuildCmd.run();
+
+  // Handle process exit.
+  function tsExited(code?: number) {
+    if (code !== 0) process.exit(code);
+  }
+  function esbuildExited(code?: number) {
+    if (code !== 0) process.exit(code);
+  }
 }
 
 export async function clean() {
-  throw new Error('TODO');
+  // Clean prev builds.
+  await new u.Command('rm', ['-rf', './dist', 'tsconfig.tsbuildinfo'], { name: 'clean', color: 'fgYellow' }).run();
 }
-
-// function killAllAndExit(code?: number) {
-//   for (const p of procs) {
-//     if (p.connected) p.kill();
-//   }
-//   process.exit(code);
-// }

@@ -1,20 +1,25 @@
 {
   "name": "barefront",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.2",
+  "description": "Bare minimum create React app. This is still a work in progress.",
   "type": "module",
   "bin": {
-    "barefront": "./dist/barefront.js"
+    "barefront": "dist/barefront.js"
   },
   "main": "./dist/barefront.js",
+  "files": [
+    "dist",
+    "template"
+  ],
   "scripts": {
     "clean": "rm -rf ./dist tsconfig.tsbuildinfo",
-    "build": "tsc --build",
+    "build": "tsc --build && chmod +x ./dist/barefront.js",
     "chmod": "chmod +x ./dist/barefront.js",
-    "dev": "tsc --build --watch --preserveWatchOutput"
+    "dev": "tsc --build --watch --preserveWatchOutput",
+    "prepare": "npm run build"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Sean Shirazi <sean@computing-den.com>",
+  "license": "MIT",
   "peerDependencies": {
     "esbuild": "^0.20.1",
     "typescript": "^5.2.2"

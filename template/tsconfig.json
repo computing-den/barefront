@@ -4,7 +4,7 @@
     "outDir": "dist",
     "module": "nodenext", // Depends on moduleResolution.
     "target": "esnext",
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["esnext", "dom", "dom.iterable", "WebWorker"],
     "jsx": "preserve",
     "isolatedModules": true, // Prevents you from using features which could cause mis-compilation in environments like esbuild where each file is compiled independently without tracing type references across files.
     "declaration": true, //  Defaults to true when composite: true

@@ -1,5 +1,5 @@
 {
-  "name": "${name}",
+  "name": "%{name}",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -7,12 +7,13 @@
     "clean": "barefront clean",
     "build": "barefront build",
     "start": "node --enable-source-maps --watch dist/server/index.js",
-    "dev": "barefront dev"
+    "dev": "barefront dev",
+    "deploy": "barefront deploy"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "barefront": "^1.0.0",
+    "barefront": "^1.0.2",
     "esbuild": "^0.20.1",
     "typescript": "^5.2.2",
     "@types/node": "^20.11.20",
@@ -23,8 +24,10 @@
   },
   "dependencies": {
     "body-parser": "^1.20.2",
+    "cookie-parser": "^1.4.6",
     "express": "^4.18.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "dotenv": "^16.4.5"
   }
 }

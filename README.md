@@ -1,3 +1,8 @@
+# Barefront
+
+Bare minimum create React app.
+This project is still a work in progress.
+
 # Development
 npm run dev
 npm run chmod
