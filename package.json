@@ -1,7 +1,7 @@
 {
   "name": "barefront",
-  "version": "1.0.2",
-  "description": "Bare minimum create React app. This is still a work in progress.",
+  "version": "1.0.4",
+  "description": "Bare minimum create React app.",
   "type": "module",
   "bin": {
     "barefront": "dist/barefront.js"
@@ -19,7 +19,18 @@
     "prepare": "npm run build"
   },
   "author": "Sean Shirazi <sean@computing-den.com>",
+  "keywords": [
+    "react",
+    "zero-configuration",
+    "build-tools",
+    "minimal",
+    "template"
+  ],
   "license": "MIT",
+  "repository": "github:computing-den/barefront",
+  "engines": {
+    "node": ">=18.19.0"
+  },
   "peerDependencies": {
     "esbuild": "^0.20.1",
     "typescript": "^5.2.2"
