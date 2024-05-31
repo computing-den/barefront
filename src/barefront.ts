@@ -5,12 +5,13 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import cp from 'node:child_process';
-import * as buildApi from './build.js';
-import * as u from './util.js';
+import { exitWithError, Command, canAccessPath, waitUntilFileAccessible, timeout } from './util.js';
 
 type TemplateVars = {
   name: string;
 };
+
+const SERVER_DIST_FILE_PATH = 'dist/server/index.js';
 
 const curFilename = fileURLToPath(import.meta.url);
 const templateDirPath = path.resolve(curFilename, '../../template');
@@ -29,7 +30,7 @@ const argsConfig: util.ParseArgsConfig = {
 const args = util.parseArgs(argsConfig);
 
 if (!args.positionals.length) {
-  u.exitWithError('missing command.');
+  exitWithError('missing command.');
 }
 
 const command = args.positionals[0];
@@ -40,31 +41,31 @@ switch (command) {
     break;
   }
   case 'build': {
-    await buildApi.build();
+    await build();
     break;
   }
   case 'dev': {
-    await buildApi.runDev();
+    await runDev();
     break;
   }
   case 'clean': {
-    await buildApi.clean();
+    await clean();
     break;
   }
   // case 'deploy': {
-  //   await buildApi.deploy(args.values as any);
+  //   await deploy(args.values as any);
   //   break;
   // }
   default: {
-    u.exitWithError(`unknown command ${command}.`);
+    exitWithError(`unknown command ${command}.`);
   }
 }
 
 async function create() {
   const name = args.positionals[1];
-  if (!name) u.exitWithError('missing project name.');
-  if (name.includes('/') || name.includes('\\')) u.exitWithError('project name must not include / or \\.');
-  if (await u.canAccessPath(name)) u.exitWithError(`${name} already exists.`);
+  if (!name) exitWithError('missing project name.');
+  if (name.includes('/') || name.includes('\\')) exitWithError('project name must not include / or \\.');
+  if (await canAccessPath(name)) exitWithError(`${name} already exists.`);
 
   await copyFiles(name);
   await expandFiles(name, { name });
@@ -72,6 +73,87 @@ async function create() {
   await initGit(name);
 
   console.log(`Done.`);
+}
+
+async function runDev() {
+  // NOTE npm/npx commands are run for the template project's package.
+
+  // Clean prev builds.
+  await clean();
+
+  // Run typescript.
+  const tsCmd = new Command('npx', ['tsc', '--build', '--watch', '--pretty', '--preserveWatchOutput'], {
+    name: 'ts',
+    color: 'fgGreen',
+    onExit: tsExited,
+  });
+  tsCmd.run();
+
+  // Run esbuild.
+  const esbuildCmd = new Command('node', ['esbuild.config.mjs', '--watch'], {
+    name: 'esbuild',
+    color: 'fgBlue',
+    onExit: esbuildExited,
+  });
+  esbuildCmd.run();
+
+  // Run server.
+  const serverCmd = new Command('node', ['--enable-source-maps', '--watch', '--inspect=9230', SERVER_DIST_FILE_PATH], {
+    name: 'server',
+    color: 'fgMagenta',
+    onExit: serverExited,
+  });
+  console.error(serverCmd.tagger.get() + ` waiting for ${SERVER_DIST_FILE_PATH} ...`);
+  await waitUntilFileAccessible(SERVER_DIST_FILE_PATH);
+  serverCmd.run();
+
+  // Handle process exit.
+  function tsExited(code?: number) {
+    process.exit(code);
+  }
+  function esbuildExited(code?: number) {
+    process.exit(code);
+  }
+  async function serverExited(_code?: number) {
+    await timeout(1000);
+    serverCmd.run();
+  }
+}
+
+async function build() {
+  // NOTE npm/npx commands are run for the template project's package.
+
+  // Clean prev builds.
+  await clean();
+
+  // Run typescript.
+  const tsCmd = new Command('npx', ['tsc', '--build', '--pretty', '--preserveWatchOutput'], {
+    name: 'ts',
+    color: 'fgGreen',
+    onExit: tsExited,
+  });
+  tsCmd.run();
+
+  // Run esbuild.
+  const esbuildCmd = new Command('node', ['esbuild.config.mjs'], {
+    name: 'esbuild',
+    color: 'fgBlue',
+    onExit: esbuildExited,
+  });
+  esbuildCmd.run();
+
+  // Handle process exit.
+  function tsExited(code?: number) {
+    if (code !== 0) process.exit(code);
+  }
+  function esbuildExited(code?: number) {
+    if (code !== 0) process.exit(code);
+  }
+}
+
+async function clean() {
+  // Clean prev builds.
+  await new Command('rm', ['-rf', './dist', 'tsconfig.tsbuildinfo'], { name: 'clean', color: 'fgYellow' }).run();
 }
 
 async function copyFiles(dirPath: string) {
