@@ -6,12 +6,18 @@
   "scripts": {
     "clean": "barefront clean",
     "build": "barefront build",
-    "start": "node --enable-source-maps --watch dist/server/index.js",
+    "start": "node --enable-source-maps dist/server/index.js",
     "dev": "barefront dev",
-    "deploy": "barefront deploy"
+    "deploy": "node deploy.mjs"
   },
   "author": "",
+  "keywords": [],
   "license": "ISC",
+  "homepage": "",
+  "repository": "",
+  "engines": {
+    "node": ">=18.19.0"
+  },
   "devDependencies": {
     "barefront": "^1.0.2",
     "esbuild": "^0.20.1",

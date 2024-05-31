@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import express from 'express';
 import path from 'path';
+import cookieParser from 'cookie-parser';
 import { adder } from '../common/adder.js';
 
 const PUBLIC = path.join(process.cwd(), 'public');
@@ -12,6 +13,8 @@ app.use(express.json());
 
 app.use('/', express.static(PUBLIC));
 app.use('/', express.static(DIST_PUBLIC));
+
+app.use(cookieParser());
 
 app.get('/adder', (req, res) => {
   res.send(`2 + 2 = ${adder(2, 2)}`);

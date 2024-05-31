@@ -8,6 +8,7 @@ const deployName = process.argv[2];
 readEnvVars();
 
 const { DEPLOY_SSH_HOST, DEPLOY_BUILD_PATH, DEPLOY_PATH, DEPLOY_SERVICE } = process.env;
+const DEPLOY_BACKUP_PATH = `${DEPLOY_PATH}-backup-${new Date().toISOString()}`;
 
 // Make archive.
 run('rm', '-rf', 'dist/deploy/');
@@ -31,11 +32,6 @@ set -x
 cd '${DEPLOY_BUILD_PATH}'
 tar xf deploy.tar.gz
 
-# Copy private from previous deploy.
-if [ -d '${DEPLOY_PATH}/private' ]; then
-  rsync -a '${DEPLOY_PATH}/private/' '${DEPLOY_BUILD_PATH}/private/'
-fi
-
 # Install and build.
 npm install
 chown -R www-data:www-data .
@@ -45,10 +41,16 @@ chown -R www-data:www-data .
 # Stop service if running
 systemctl stop ${DEPLOY_SERVICE} || true
 
-# Replace with old deploy.
-if [ -d '${DEPLOY_PATH}' ]; then
-  mv '${DEPLOY_PATH}' '${DEPLOY_PATH}-backup-${new Date().toISOString()}'
+# Copy the old private directory.
+if [ -d '${DEPLOY_PATH}/private' ]; then
+  rsync -a '${DEPLOY_PATH}/private/' '${DEPLOY_BUILD_PATH}/private/'
 fi
+
+# Make a backup of the old deploy.
+if [ -d '${DEPLOY_PATH}' ]; then
+  mv '${DEPLOY_PATH}' '${DEPLOY_BACKUP_PATH}'
+fi
+
 mv '${DEPLOY_BUILD_PATH}' '${DEPLOY_PATH}'
 
 systemctl start ${DEPLOY_SERVICE}

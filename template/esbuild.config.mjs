@@ -9,10 +9,9 @@ const context = await esbuild.context({
   sourcemap: true,
   format: 'esm',
   treeShaking: true,
-  define: {
-    NODE_ENV: process.env.NODE_ENV,
-  },
+  define: Object.fromEntries(Object.keys(process.env).map(key => [`process.env.${key}`, `"${process.env[key]}"`])),
   plugins: [reporterPlugin()],
+  loader: { '.svg': 'dataurl', '.txt': 'text', '.md': 'text' },
 });
 
 if (process.argv.includes('--watch')) {
