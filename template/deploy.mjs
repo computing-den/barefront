@@ -13,9 +13,34 @@ function main() {
 
   if (OPTIONS['init-server']) {
     initServer();
+  } else if (OPTIONS['clean-server']) {
+    cleanServer();
   } else {
     deploy();
   }
+}
+
+function readArgs() {
+  const { values, positionals } = util.parseArgs({
+    allowPositionals: true,
+    args: process.argv.slice(2),
+    options: {
+      'init-server': { type: 'boolean' },
+      'clean-server': { type: 'boolean' },
+    },
+  });
+
+  OPTIONS = { ...values, deployName: positionals[0] };
+
+  if (!OPTIONS.deployName) {
+    exitWithError('Usage: npm run deploy [--init-server | --clean-server] DEPLOY_NAME');
+  }
+}
+
+// Apply ./deploy/NAME.deploy env variables.
+function readEnv() {
+  fs.accessSync(`deploy/${OPTIONS.deployName}.deploy`); // Make sure file exists.
+  dotenv.config({ path: `deploy/${OPTIONS.deployName}.deploy` });
 }
 
 function initServer() {
@@ -114,6 +139,28 @@ nginx -s reload
 `);
 }
 
+function cleanServer() {
+  const { DEPLOY_SERVICE } = process.env;
+
+  runRemote(`
+# Exit if any command fails.
+set -e
+set -x
+
+# Disable, stop, and delete the systemd service.
+if [ -f "/etc/systemd/system/${DEPLOY_SERVICE}.service" ]; then
+  systemctl disable --now ${DEPLOY_SERVICE}
+  rm -f "/etc/systemd/system/${DEPLOY_SERVICE}.service"
+fi
+
+# Delete nginx config and reload.
+if [ -f "/etc/nginx/sites-available/${DEPLOY_SERVICE}.conf" ]; then
+  rm -f "/etc/nginx/sites-enabled/${DEPLOY_SERVICE}.conf"
+  nginx -s reload
+fi
+`);
+}
+
 function deploy() {
   const { DEPLOY_SSH_HOST, DEPLOY_BUILD_PATH, DEPLOY_PATH, DEPLOY_SERVICE } = process.env;
   const DEPLOY_BACKUP_PATH = `${DEPLOY_PATH}-backup-${BUILD_TIME}`;
@@ -188,28 +235,6 @@ function runNoThrow(cmd, ...args) {
 function exitWithError(msg) {
   console.error(`ERROR: ${msg}`);
   process.exit(-1);
-}
-
-// Apply ./deploy/NAME.deploy env variables.
-function readEnv() {
-  fs.accessSync(`deploy/${OPTIONS.deployName}.deploy`); // Make sure file exists.
-  dotenv.config({ path: `deploy/${OPTIONS.deployName}.deploy` });
-}
-
-function readArgs() {
-  const { values, positionals } = util.parseArgs({
-    allowPositionals: true,
-    args: process.argv.slice(2),
-    options: {
-      'init-server': { type: 'boolean' },
-    },
-  });
-
-  OPTIONS = { ...values, deployName: positionals[0] };
-
-  if (!OPTIONS.deployName) {
-    exitWithError('Usage: npm run deploy [--init-sever] DEPLOY_NAME');
-  }
 }
 
 main();

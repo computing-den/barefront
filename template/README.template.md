@@ -32,4 +32,8 @@ npm run deploy -- --init-server example
 
 # Deploys the git index to the server.
 npm run deploy example
+
+# Clean the server, only deletes nginx and systemd and reloads them
+npm run deploy -- --clean-server example
+
 ```
