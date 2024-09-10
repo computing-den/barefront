@@ -11,10 +11,16 @@ type TemplateVars = {
   name: string;
 };
 
+type PackageFile = {
+  barefront?: {
+    library?: boolean;
+  };
+};
+
 const SERVER_DIST_FILE_PATH = 'dist/server/index.js';
 
 const curFilename = fileURLToPath(import.meta.url);
-const templateDirPath = path.resolve(curFilename, '../../template');
+const templatesDirPath = path.resolve(curFilename, '../../templates');
 
 // const fgGreen = '\x1b[32m';
 // const reset = '\x1b[0m';
@@ -22,6 +28,7 @@ const templateDirPath = path.resolve(curFilename, '../../template');
 const argsConfig: util.ParseArgsConfig = {
   options: {
     linkToBarefront: { type: 'boolean' },
+    library: { type: 'boolean' },
     // deployName: { type: 'string' },
   },
   allowPositionals: true,
@@ -67,7 +74,13 @@ async function create() {
   if (name.includes('/') || name.includes('\\')) exitWithError('project name must not include / or \\.');
   if (await canAccessPath(name)) exitWithError(`${name} already exists.`);
 
-  await copyFiles(name);
+  let srcPath: string;
+  if (args.values.library) {
+    srcPath = path.resolve(templatesDirPath, 'library');
+  } else {
+    srcPath = path.resolve(templatesDirPath, 'server_client');
+  }
+  await copyFiles(srcPath, name);
   await expandFiles(name, { name });
   await installPackages(name);
   await initGit(name);
@@ -77,6 +90,9 @@ async function create() {
 
 async function runDev() {
   // NOTE npm/npx commands are run for the template project's package.
+
+  // Read package.json
+  const packageFile = await readPackageFile();
 
   // Clean prev builds.
   await clean();
@@ -89,34 +105,41 @@ async function runDev() {
   });
   tsCmd.run();
 
-  // Run esbuild.
-  const esbuildCmd = new Command('node', ['esbuild.config.mjs', '--watch'], {
-    name: 'esbuild',
-    color: 'fgBlue',
-    onExit: esbuildExited,
-  });
-  esbuildCmd.run();
+  if (!packageFile.barefront?.library) {
+    // Run esbuild.
+    const esbuildCmd = new Command('node', ['esbuild.config.mjs', '--watch'], {
+      name: 'esbuild',
+      color: 'fgBlue',
+      onExit: esbuildExited,
+    });
+    esbuildCmd.run();
 
-  // Run server.
-  const serverCmd = new Command('node', ['--enable-source-maps', '--watch', '--inspect=9230', SERVER_DIST_FILE_PATH], {
-    name: 'server',
-    color: 'fgMagenta',
-    onExit: serverExited,
-  });
-  console.error(serverCmd.tagger.get() + ` waiting for ${SERVER_DIST_FILE_PATH} ...`);
-  await waitUntilFileAccessible(SERVER_DIST_FILE_PATH);
-  serverCmd.run();
+    // Run server.
+    const serverCmd = new Command(
+      'node',
+      ['--enable-source-maps', '--watch', '--inspect=9230', SERVER_DIST_FILE_PATH],
+      {
+        name: 'server',
+        color: 'fgMagenta',
+        onExit: serverExited,
+      },
+    );
+    console.error(serverCmd.tagger.get() + ` waiting for ${SERVER_DIST_FILE_PATH} ...`);
+    await waitUntilFileAccessible(SERVER_DIST_FILE_PATH);
+    serverCmd.run();
+
+    function esbuildExited(code?: number) {
+      process.exit(code);
+    }
+    async function serverExited(_code?: number) {
+      await timeout(1000);
+      serverCmd.run();
+    }
+  }
 
   // Handle process exit.
   function tsExited(code?: number) {
     process.exit(code);
-  }
-  function esbuildExited(code?: number) {
-    process.exit(code);
-  }
-  async function serverExited(_code?: number) {
-    await timeout(1000);
-    serverCmd.run();
   }
 }
 
@@ -126,6 +149,9 @@ async function build() {
   // Clean prev builds.
   await clean();
 
+  // Read package.json
+  const packageFile = await readPackageFile();
+
   // Run typescript.
   const tsCmd = new Command('npx', ['tsc', '--build', '--pretty', '--preserveWatchOutput'], {
     name: 'ts',
@@ -134,19 +160,22 @@ async function build() {
   });
   tsCmd.run();
 
-  // Run esbuild.
-  const esbuildCmd = new Command('node', ['esbuild.config.mjs'], {
-    name: 'esbuild',
-    color: 'fgBlue',
-    onExit: esbuildExited,
-  });
-  esbuildCmd.run();
+  if (!packageFile.barefront?.library) {
+    // Run esbuild.
+    const esbuildCmd = new Command('node', ['esbuild.config.mjs'], {
+      name: 'esbuild',
+      color: 'fgBlue',
+      onExit: esbuildExited,
+    });
+    esbuildCmd.run();
+
+    function esbuildExited(code?: number) {
+      if (code !== 0) process.exit(code);
+    }
+  }
 
   // Handle process exit.
   function tsExited(code?: number) {
-    if (code !== 0) process.exit(code);
-  }
-  function esbuildExited(code?: number) {
     if (code !== 0) process.exit(code);
   }
 }
@@ -156,9 +185,13 @@ async function clean() {
   await new Command('rm', ['-rf', './dist', 'tsconfig.tsbuildinfo'], { name: 'clean', color: 'fgYellow' }).run();
 }
 
-async function copyFiles(dirPath: string) {
+async function readPackageFile(): Promise<PackageFile> {
+  return JSON.parse(await fs.promises.readFile('package.json', 'utf8'));
+}
+
+async function copyFiles(srcPath: string, dirPath: string) {
   console.log(`Copying files to ${path.resolve(dirPath)} ...`);
-  await fs.promises.cp(templateDirPath, dirPath, { recursive: true });
+  await fs.promises.cp(srcPath, dirPath, { recursive: true });
 }
 
 async function installPackages(dirPath: string) {

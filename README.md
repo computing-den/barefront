@@ -25,12 +25,12 @@ npm run dev
 npm run chmod
 npm link
 
-npx barefront create my-project --linkToBarefront
+npx barefront create my-project --linkToBarefront [--library]
 ```
 
 # Production
 
 ```
 npm run build
-npx barefront create my-project
+npx barefront create my-project [--library]
 ```

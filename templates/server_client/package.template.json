@@ -10,6 +10,12 @@
     "dev": "barefront dev",
     "deploy": "node deploy.mjs"
   },
+  "exports": {
+    "./*": "./dist/*"
+  },
+  "barefront": {
+    "library": false
+  },
   "author": "",
   "keywords": [],
   "license": "ISC",

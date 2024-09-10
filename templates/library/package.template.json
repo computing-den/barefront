@@ -1,0 +1,36 @@
+{
+  "name": "%{name}",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "clean": "barefront clean",
+    "build": "barefront build",
+    "dev": "barefront dev"
+  },
+  "exports": {
+    "./*": "./dist/*"
+  },
+  "barefront": {
+    "library": true
+  },
+  "author": "",
+  "keywords": [],
+  "license": "ISC",
+  "homepage": "",
+  "repository": "",
+  "engines": {
+    "node": ">=18.19.0"
+  },
+  "devDependencies": {
+    "barefront": "^1.0.2",
+    "typescript": "^5.2.2",
+    "@types/node": "^20.11.20",
+    "@types/react": "^18.2.57",
+    "@types/react-dom": "^18.2.19"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
