@@ -111,7 +111,12 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
+
+        # The following are required by express.js.
+        # See https://expressjs.com/en/guide/behind-proxies.html
         proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 EOF
@@ -155,6 +160,7 @@ fi
 
 # Delete nginx config and reload.
 if [ -f "/etc/nginx/sites-available/${DEPLOY_SERVICE}.conf" ]; then
+  rm -f "/etc/nginx/sites-available/${DEPLOY_SERVICE}.conf"
   rm -f "/etc/nginx/sites-enabled/${DEPLOY_SERVICE}.conf"
   nginx -s reload
 fi

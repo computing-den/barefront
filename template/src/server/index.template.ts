@@ -9,6 +9,11 @@ const PUBLIC = path.join(process.cwd(), 'public');
 const DIST_PUBLIC = path.join(process.cwd(), 'dist/public');
 
 const app = express();
+
+// Trust the reverse proxy on the same server so that req.ip will be taken from X-Forwarded-For header.
+// See https://expressjs.com/en/guide/behind-proxies.html
+app.set('trust proxy', 'loopback');
+
 app.use(express.json());
 
 app.use('/', express.static(PUBLIC));
@@ -27,6 +32,7 @@ app.get('/', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="%{name} description goes here">
     <title>%{name}</title>
     <link rel="stylesheet" href="/style.css">
 	  <script src="/index.js"></script>
