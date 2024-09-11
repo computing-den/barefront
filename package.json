@@ -1,6 +1,6 @@
 {
   "name": "barefront",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Bare minimum create React app.",
   "type": "module",
   "bin": {
