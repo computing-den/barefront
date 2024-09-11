@@ -1,15 +1,13 @@
-import dotenv from 'dotenv';
-import path from 'node:path';
-import fs from 'node:fs';
-import cp from 'node:child_process';
 import * as util from 'node:util';
+import * as barefront from 'barefront';
+import packageJSON from './package.json' assert { type: 'json' };
 
 let OPTIONS;
 let BUILD_TIME = new Date().toISOString();
 
 function main() {
   readArgs();
-  readEnv();
+  barefront.readEnv(OPTIONS.deployName);
 
   if (OPTIONS['init-server']) {
     initServer();
@@ -33,14 +31,8 @@ function readArgs() {
   OPTIONS = { ...values, deployName: positionals[0] };
 
   if (!OPTIONS.deployName) {
-    exitWithError('Usage: npm run deploy [--init-server | --clean-server] DEPLOY_NAME');
+    barefront.exitWithError('Usage: npm run deploy [--init-server | --clean-server] DEPLOY_NAME');
   }
-}
-
-// Apply ./deploy/NAME.deploy env variables.
-function readEnv() {
-  fs.accessSync(`deploy/${OPTIONS.deployName}.deploy`); // Make sure file exists.
-  dotenv.config({ path: `deploy/${OPTIONS.deployName}.deploy` });
 }
 
 function initServer() {
@@ -170,17 +162,26 @@ fi
 function deploy() {
   const { DEPLOY_SSH_HOST, DEPLOY_BUILD_PATH, DEPLOY_PATH, DEPLOY_SERVICE } = process.env;
   const DEPLOY_BACKUP_PATH = `${DEPLOY_PATH}-backup-${BUILD_TIME}`;
+  const packName = `${packageJSON.name}-${packageJSON.version}.tgz`;
 
-  // Make archive.
-  run('rm', '-rf', 'dist/deploy/');
-  run('git', 'checkout-index', '-a', '-f', '--prefix=dist/deploy/');
-  run('mkdir', '-p', 'dist/deploy/private');
-  run('cp', `deploy/${OPTIONS.deployName}.deploy`, 'dist/deploy/.env');
-  run('tar', 'caf', 'dist/deploy.tar.gz', '--directory=dist/deploy', '.'); // relative to dist/deploy
+  // Remove old dist/package
+  run('rm', '-rf', 'dist/package');
+
+  // npm pack
+  run('npm', 'pack', '--pack-destination', 'dist');
+
+  // Extract to dist/package so we can modify it
+  run('tar', 'xf', `dist/${packName}`, '--directory=dist');
+
+  // Add .env
+  run('cp', `deploy/${OPTIONS.deployName}.deploy`, 'dist/package/.env');
+
+  // Repackage
+  run('tar', 'caf', `dist/${packName}`, '--directory=dist', 'package'); // relative to dist
 
   // Upload.
   runRemote(`rm -rf '${DEPLOY_BUILD_PATH}'`);
-  run('rsync', '-r', 'dist/deploy.tar.gz', `${DEPLOY_SSH_HOST}:${DEPLOY_BUILD_PATH}/`);
+  run('rsync', '-r', `dist/${packName}`, `${DEPLOY_SSH_HOST}:${DEPLOY_BUILD_PATH}/`);
 
   // Deploy.
   runRemote(`
@@ -190,8 +191,10 @@ set -e
 set -x
 
 # Decompress archive.
+# The --strip-components=1 removes the package/ prefix
 cd '${DEPLOY_BUILD_PATH}'
-tar xf deploy.tar.gz
+tar --strip-components=1 -xzf ${packName}
+mkdir -p private
 
 # Install and build.
 npm install
@@ -219,28 +222,12 @@ systemctl start ${DEPLOY_SERVICE}
 `);
 }
 
-function runRemote(cmd) {
-  return run('ssh', process.env.DEPLOY_SSH_HOST, cmd);
-}
-
-function runRemoteNoThrow(cmd) {
-  return runNoThrow('ssh', process.env.DEPLOY_SSH_HOST, cmd);
-}
-
 function run(cmd, ...args) {
-  const status = runNoThrow(cmd, ...args);
-  if (status !== 0) exitWithError(`Command ${cmd} failed with status ${status}.`);
-  return status;
+  return barefront.execOpt({ verbose: true }, cmd, ...args);
 }
 
-function runNoThrow(cmd, ...args) {
-  console.log(cmd, args.map(x => `"${x}"`).join(' '));
-  return cp.spawnSync(cmd, args, { stdio: 'inherit' }).status;
-}
-
-function exitWithError(msg) {
-  console.error(`ERROR: ${msg}`);
-  process.exit(-1);
+function runRemote(cmd, ...args) {
+  return barefront.execOpt({ sshHost: process.env.DEPLOY_SSH_HOST }, cmd, ...args);
 }
 
 main();

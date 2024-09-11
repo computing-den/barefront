@@ -22,7 +22,6 @@ See the generated project's README.md for its usage.
 npm run dev
 
 # in a separate terminal:
-npm run chmod
 npm link
 
 npx barefront create my-project --linkToBarefront [--library]
