@@ -4,11 +4,13 @@
   "description": "",
   "type": "module",
   "scripts": {
+    "start": "node --enable-source-maps dist/server/index.js",
     "clean": "barefront clean",
     "build": "barefront build",
-    "start": "node --enable-source-maps dist/server/index.js",
     "dev": "barefront dev",
-    "deploy": "node deploy.mjs"
+    "init-server": "barefront init-server",
+    "clean-server": "barefront clean-server",
+    "deploy": "barefront deploy"
   },
   "exports": {
     "./*": "./dist/*"
@@ -25,9 +27,10 @@
     "node": ">=18.19.0"
   },
   "devDependencies": {
-    "barefront": "^1.5.0",
+    "barefront": "^2.2.0",
     "esbuild": "^0.20.1",
     "typescript": "^5.2.2",
+    "@tsconfig/node18": "^18.2.4",
     "@types/node": "^20.11.20",
     "@types/body-parser": "^1.19.5",
     "@types/cookie-parser": "^1.4.6",

@@ -27,13 +27,10 @@ See deployment env files in `deploy/`
 npm run clean
 npm run build
 
-# Run only once to set up the server's system and nginx.
-npm run deploy -- --init-server example
-
-# Deploys the git index to the server.
+# Deploy based on the deploy/example file. Will set up nginx and systemd.
 npm run deploy example
 
 # Clean the server, only deletes nginx and systemd and reloads them
-npm run deploy -- --clean-server example
+npm run clean-server example
 
 ```

@@ -24,7 +24,7 @@ npm run dev
 # in a separate terminal:
 npm link
 
-npx barefront create my-project --linkToBarefront [--library]
+npx barefront create my-project --dev [--library]
 ```
 
 # Production
