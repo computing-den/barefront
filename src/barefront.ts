@@ -246,7 +246,7 @@ fi
 
 # Make a backup of the old deploy.
 if [ -d '${env.DEPLOY_PATH}' ]; then
-  mv '${env.DEPLOY_PATH}' '${env.DEPLOY_BACKUP_PATH}'
+  mv '${env.DEPLOY_PATH}' '${env.DEPLOY_PATH}-backup-${new Date().toISOString()}'
 fi
 
 mv '${env.DEPLOY_BUILD_PATH}' '${env.DEPLOY_PATH}'

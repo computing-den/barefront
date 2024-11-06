@@ -4,6 +4,7 @@
   "description": "",
   "type": "module",
   "scripts": {
+    "prepublishOnly": "barefront build",
     "start": "node --enable-source-maps dist/server/index.js",
     "clean": "barefront clean",
     "build": "barefront build",

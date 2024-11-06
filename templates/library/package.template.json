@@ -4,6 +4,7 @@
   "description": "",
   "type": "module",
   "scripts": {
+    "prepublishOnly": "barefront build",
     "clean": "barefront clean",
     "build": "barefront build",
     "dev": "barefront dev"
