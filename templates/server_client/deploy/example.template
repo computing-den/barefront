@@ -1,0 +1,8 @@
+PORT=3000
+NODE_ENV=production
+DEPLOY_SSH_HOST=example
+DEPLOY_PATH=/srv/www/%{name}
+DEPLOY_BUILD_PATH=/srv/www/%{name}-build
+DEPLOY_SERVICE=%{name}
+DEPLOY_SERVER_NAME=%{name}.com
+DEPLOY_NGINX_SERVE_REL_PATHS=dist/public:public

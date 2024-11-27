@@ -461,7 +461,8 @@ function getNginxConfig(env: Record<string, string>): string {
   // The / at the beginning makes it relative to root.
   const servePaths = _.compact(_.split(env.DEPLOY_NGINX_SERVE_REL_PATHS, ':').map(x => x.trim()))
     .map(x => (x.startsWith('/') ? x : `/${x}`))
-    .map(x => `${x}$uri`);
+    .map(x => `${x}$uri`)
+    .join(' ');
 
   return `
 server {

@@ -25,7 +25,7 @@
     "node": ">=18.19.0"
   },
   "devDependencies": {
-    "barefront": "^1.5.0",
+    "barefront": "^2.7.0",
     "typescript": "^5.2.2",
     "@types/node": "^20.11.20",
     "@types/react": "^18.2.57",
