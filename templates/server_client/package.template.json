@@ -28,7 +28,7 @@
     "node": ">=18.19.0"
   },
   "devDependencies": {
-    "barefront": "^2.2.0",
+    "barefront": "^2.4.0",
     "esbuild": "^0.20.1",
     "typescript": "^5.2.2",
     "@tsconfig/node18": "^18.2.4",

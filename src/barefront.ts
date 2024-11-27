@@ -458,6 +458,11 @@ function stripTemplateExtension(filePath: string): string | undefined {
 }
 
 function getNginxConfig(env: Record<string, string>): string {
+  // The / at the beginning makes it relative to root.
+  const servePaths = _.compact(_.split(env.DEPLOY_NGINX_SERVE_REL_PATHS, ':').map(x => x.trim()))
+    .map(x => (x.startsWith('/') ? x : `/${x}`))
+    .map(x => `${x}$uri`);
+
   return `
 server {
     server_name  ${env.DEPLOY_SERVER_NAME};
@@ -470,13 +475,14 @@ server {
     proxy_send_timeout          30;
     proxy_read_timeout          30;
     send_timeout                30;
+    root ${env.DEPLOY_PATH};
 
     listen       80;
     listen  [::]:80;
 
     # Try the static files first before passing the request to the node server.
     location / {
-        try_files ${env.DEPLOY_PATH}/dist/public$uri ${env.DEPLOY_PATH}/public$uri @proxy_to_server;
+        try_files ${servePaths} @proxy_to_server;
     }
 
     # Proxy to the node server.
