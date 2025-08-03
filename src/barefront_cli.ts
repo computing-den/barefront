@@ -2,7 +2,12 @@
 
 import util from 'node:util';
 import * as barefront from './barefront.js';
-import ownPackageJSON from '../package.json' assert { type: 'json' };
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+
+const ownDirname = dirname(fileURLToPath(import.meta.url));
+const ownPackageJSON = JSON.parse(readFileSync(resolve(ownDirname, '../package.json'), 'utf8'));
 
 // const fgGreen = '\x1b[32m';
 // const reset = '\x1b[0m';

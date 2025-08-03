@@ -1,6 +1,6 @@
 {
   "name": "barefront",
-  "version": "2.9.0",
+  "version": "2.10.0",
   "description": "Bare minimum create React app.",
   "type": "module",
   "bin": {
@@ -34,8 +34,8 @@
     "node": ">=18.19.0"
   },
   "peerDependencies": {
-    "esbuild": "^0.25.2",
-    "typescript": "^5.8.3"
+    "esbuild": "^0.20.0",
+    "typescript": "^5.2.0"
   },
   "dependencies": {
     "@types/node": "^20.11.20",
