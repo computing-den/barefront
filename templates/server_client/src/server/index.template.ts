@@ -35,7 +35,7 @@ app.get('/', (req, res) => {
     <meta name="description" content="%{name} description goes here">
     <title>%{name}</title>
     <link rel="stylesheet" href="/style.css">
-	  <script src="/index.js"></script>
+	  <script type="module" src="/index.js"></script>
   </head>
   <body>
     <div id="app"></div>
